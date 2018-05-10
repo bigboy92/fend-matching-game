@@ -4,8 +4,8 @@ const container = document.querySelector('.container');
 let cards = [...card];
 let open = [];
 let matchedCard = document.getElementsByClassName("match");
+let matched = [...matchedCard];
 let moves = 0;
-let counter = document.querySelector(".moves");
 
 // function for adding eventlistener if a card is clicked
 let clicked = function (){
@@ -87,8 +87,9 @@ function openAdd(){
 }
 
 function counterMove(){
+  let counter = document.querySelector(".moves");
   moves += 1;
-  counter.innerHTML = moves;
+  counter.textContent = moves;
 }
 /*
  * set up the event listener for a card. If a card is clicked:
