@@ -3,9 +3,14 @@ const restart = document.getElementsByClassName(`fa-repeat`);
 const container = document.querySelector('.container');
 let cards = [...card];
 let open = [];
-let matchedCard = document.getElementsByClassName("match");
-let matched = [...matchedCard];
 let moves = 0;
+let matchedCard = document.getElementsByClassName("match");
+let interval;
+let counter = document.querySelector(".moves");
+let timer = document.querySelector(".timer");
+let minutes = document.querySelector('.minutes');
+let seconds = document.querySelector('.seconds');
+
 
 // function for adding eventlistener if a card is clicked
 let clicked = function (){
@@ -40,6 +45,7 @@ function newDeck(){
   let shuffledCards = shuffle(cards);
   for (let i= 0; i < shuffledCards.length; i++){
     newDeck.appendChild(shuffledCards[i]);
+    shuffledCards[i].classList.remove("open", "match", "locked");
    }
    container.removeChild(deck);
    container.appendChild(newDeck);
@@ -49,7 +55,14 @@ restart[0].addEventListener('click', reset);
 function reset() {
   newDeck();
   open = [];
-  counter = 0
+  moves = 0;
+  counter.textContent = "0";
+  document.querySelector('.stars').innerHTML = '<li><i class="fa fa-star"></i></li><li><i class="fa fa-star"></i></li><li><i class="fa fa-star"></i></li>';
+  //Timer
+  minutes.textContent = '00';
+  seconds.textContent = '00';
+  time = 0;
+  clearInterval(interval);
 }
 
 //function for adding cards to open array and comparing them
@@ -103,9 +116,6 @@ function movesCounter(){
 
 var time = 0;
 function startTimer() {
-  let timer = document.querySelector(".timer");
-  let minutes = document.querySelector('.minutes');
-  let seconds = document.querySelector('.seconds');
   time += 1;
   if (time < 3600) {
     minutes.textContent = Math.floor(time / 60) > 9 ? Math.floor(time / 60) : '0' + Math.floor(time / 60);
@@ -113,6 +123,28 @@ function startTimer() {
   } else {
     reset();
   }
+}
+
+function winner(){
+  if (matchedCard.length > 15){
+    clearInterval(interval);
+    finalTime = minutes.textContent + ':' + seconds.textContent;
+
+    // show congratulations modal
+    modal.classList.add("show");
+
+    // declare star rating variable
+    let starRating = document.querySelector(".stars").innerHTML;
+    //showing move, rating, time on modal
+    document.getElementById("finalMove").innerHTML = moves;
+    document.getElementById("starRating").innerHTML = starRating;
+    document.getElementById("totalTime").innerHTML = finalTime;
+  };
+}
+
+function playAgain(){
+    modal.classList.remove("show");
+    reset();
 }
 
 
