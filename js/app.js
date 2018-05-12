@@ -56,7 +56,7 @@ function reset() {
 function openAdd(){
   open.push(this);
   if(open.length === 2){
-    counterMove();
+    movesCounter();
     if (open[0].type === open[1].type){
       open[0].classList.add("match",'locked');
       open[1].classList.add("match", "locked");
@@ -75,7 +75,7 @@ function openAdd(){
       open[1].classList.remove("open","shake");
       Array.prototype.filter.call(cards, function(card){
         card.classList.remove('locked');
-        for(var i = 0; i < matchedCard.length; i++){
+        for (var i = 0; i < matchedCard.length; i++){
           matchedCard[i].classList.add("locked");
         }
       });
@@ -86,11 +86,36 @@ function openAdd(){
   }
 }
 
-function counterMove(){
+function movesCounter(){
   let counter = document.querySelector(".moves");
+  let step = 12;
   moves += 1;
   counter.textContent = moves;
+  if (moves % step === 0 && moves < step*3){
+    document.querySelector(".stars").children[0].remove();
+  }
+  if (moves === 1){
+    startTimer();
+    interval = window.setInterval(startTimer, 1000);
+  }
 }
+
+
+var time = 0;
+function startTimer() {
+  let timer = document.querySelector(".timer");
+  let minutes = document.querySelector('.minutes');
+  let seconds = document.querySelector('.seconds');
+  time += 1;
+  if (time < 3600) {
+    minutes.textContent = Math.floor(time / 60) > 9 ? Math.floor(time / 60) : '0' + Math.floor(time / 60);
+    seconds.textContent = time % 60 > 9 ? time % 60 : '0' + time % 60;
+  } else {
+    reset();
+  }
+}
+
+
 /*
  * set up the event listener for a card. If a card is clicked:
  *  - display the card's symbol (put this functionality in another function that you call from this one)
