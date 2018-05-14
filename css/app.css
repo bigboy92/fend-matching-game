@@ -129,59 +129,49 @@ h1 {
     display: inline-block;
 }
 
-.overlay {
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.7);
-    transition: opacity 500ms;
-    visibility: hidden;
-    opacity: 0;
+.hidden {
+  display: none;
 }
 
-.popup {
-    margin: 70px auto;
-    padding: 20px;
-    background: #ffffff;
-    border-radius: 5px;
-    width: 85%;
-    position: relative;
-    transition: all 5s ease-in-out;
-    font-family: 'Gloria Hallelujah', cursive;
+.win * {
+  margin: 0;
+  padding: 0;
 }
 
-.popup h2 {
-    margin-top: 0;
-    color: #333;
-    font-family: Tahoma, Arial, sans-serif;
-}
-.popup .content-2 {
-    max-height: 30%;
-    overflow: auto;
-    text-align: center;
+.win {
+  color: #02ccba;
+  font-size: 20px;
+  padding-top: 100px;
+  padding-top: 15vh;
+  text-align: center;
 }
 
-.show {
-    visibility: visible !important;
-    opacity: 100 !important;
+
+.win h1 {
+  margin-top: 25px;
 }
 
-#play-again {
-    background-color: #141214;
-    padding: 0.7rem 1rem;
-    font-size: 1.1rem;
-    display: block;
-    margin: 0 auto;
-    width: 50%;
-    font-family: 'Gloria Hallelujah', cursive;
-    color: #ffffff;
-    border-radius: 5px;
+.win button {
+  margin-top: 25px;
+  font-size: 17px;
+  width: 130px;
+  height: 40px;
+  color: white;
+  background-color: #02ccba;
+  border: none;
+  transition: color 200ms;
+  transition: background-color 200ms;
 }
 
-#starRating li {
-    display: inline-block;
+.win button:active {
+  color: #02ccba;
+  background-color: white;
+}
+
+/* Add Animation */
+@keyframes animatetop {
+    from {top: -300px; opacity: 0}
+    to {top: 0; opacity: 1}
 }
 
 @keyframes rubberBand {

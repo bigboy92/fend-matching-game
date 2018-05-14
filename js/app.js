@@ -5,12 +5,14 @@ let cards = [...card];
 let open = [];
 let moves = 0;
 let matchedCard = document.getElementsByClassName("match");
-let interval;
+let matched = 8;
+let interval, star;
 let counter = document.querySelector(".moves");
 let timer = document.querySelector(".timer");
 let minutes = document.querySelector('.minutes');
 let seconds = document.querySelector('.seconds');
-
+let winContainer = document.querySelector('.win');
+let stars = document.querySelectorAll(".fa-star");
 
 // function for adding eventlistener if a card is clicked
 let clicked = function (){
@@ -49,8 +51,9 @@ function newDeck(){
    }
    container.removeChild(deck);
    container.appendChild(newDeck);
-}   
-window.onload = reset();
+}  
+
+window.onload = reset(); 
 restart[0].addEventListener('click', reset);
 function reset() {
   newDeck();
@@ -62,6 +65,7 @@ function reset() {
   minutes.textContent = '00';
   seconds.textContent = '00';
   time = 0;
+  starCount = 0;
   clearInterval(interval);
 }
 
@@ -76,6 +80,10 @@ function openAdd(){
       open[0].classList.remove('open');
       open[1].classList.remove('open');
       open = [];
+      matched -= 1;
+      if (!matched){
+        winner();
+      }
     }
     else{
     open[0].classList.add("shake");
@@ -107,6 +115,15 @@ function movesCounter(){
   if (moves % step === 0 && moves < step*3){
     document.querySelector(".stars").children[0].remove();
   }
+  if (moves < 12){
+    star = 3
+  }else if ( moves == 12 || moves < 24){
+    star = 2
+
+  }else{
+    star = 1
+  } 
+
   if (moves === 1){
     startTimer();
     interval = window.setInterval(startTimer, 1000);
@@ -126,26 +143,36 @@ function startTimer() {
 }
 
 function winner(){
-  if (matchedCard.length > 15){
+  if (matchedCard.length === 16){
     clearInterval(interval);
-    finalTime = minutes.textContent + ':' + seconds.textContent;
+    let movesSpan = winContainer.querySelector('.moves');
+    let starsSpan = winContainer.querySelector('.stars');
+    let scorePanelTime = document.querySelector('.timer');
+    let timeSpan = winContainer.querySelector('.time');
+    let tempMinIndicator;
+    let count = stars.length
 
-    // show congratulations modal
-    modal.classList.add("show");
+    movesSpan.textContent = moves;
+    starsSpan.textContent = star;
+    timeSpan.appendChild(scorePanelTime.cloneNode(true));
+    tempMinutesIndicator = document.createElement('span');
+    timeSpan.appendChild(tempMinutesIndicator);
 
-    // declare star rating variable
-    let starRating = document.querySelector(".stars").innerHTML;
-    //showing move, rating, time on modal
-    document.getElementById("finalMove").innerHTML = moves;
-    document.getElementById("starRating").innerHTML = starRating;
-    document.getElementById("totalTime").innerHTML = finalTime;
-  };
+    container.classList.add('hidden');
+    winContainer.classList.remove('hidden');
+  }
+  replay();
 }
 
-function playAgain(){
-    modal.classList.remove("show");
-    reset();
+function replay(){
+  let playAgain = document.querySelector(".playAgain");
+  playAgain.addEventListener('click', function(){
+    container.classList.remove('hidden');
+    winContainer.classList.add('hidden');
+    reset();  
+  });
 }
+
 
 
 /*

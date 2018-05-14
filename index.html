@@ -80,21 +80,14 @@
                 <i class="fa fa-cube"></i>
             </li>
         </ul>
-        <div id="popup1" class="overlay">
-            <div class="popup">
-                <h2>Congratulations</h2>
-                <div class="content-2">
-                    <p>You made <span id=finalMove> </span> moves </p>
-                    <p>in <span id=totalTime> </span> </p>
-                    <p>Rating:  <span id=starRating></span></p>
-                </div>
-                <button id="play-again"onclick="playAgain()">
-                    Play again </a>
-                </button>
-            </div>
-        </div>
     </div>
-
+    <div class="container win hidden">
+        <h1>Congratulations!</h1>
+        <div>moves:  <span class="moves"></span></div>
+        <div>stars:  <span class="stars"></span></div>
+        <div>time :  <span class="time"></span></div>
+        <button class="playAgain">Play Again</button>
+    </div>
     <script src="js/app.js"></script>
 </body>
 </html>
