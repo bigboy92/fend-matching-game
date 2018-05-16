@@ -25,7 +25,7 @@ for (let i = 0; i < cards.length; i++){
    cards[i].addEventListener("click", clicked);
 };
 
-
+//this function randomly shuffles the content of an array
 function shuffle(array) {
     var currentIndex = array.length, temporaryValue, randomIndex;
 
@@ -39,6 +39,7 @@ function shuffle(array) {
 
     return array;
 };
+
 //function to create new deck of shuffled cards
 function newDeck(){
   let deck = document.querySelector(".deck");
@@ -53,21 +54,6 @@ function newDeck(){
    container.appendChild(newDeck);
 }  
 
-window.onload = reset(); 
-restart[0].addEventListener('click', reset);
-function reset() {
-  newDeck();
-  open = [];
-  moves = 0;
-  counter.textContent = "0";
-  document.querySelector('.stars').innerHTML = '<li><i class="fa fa-star"></i></li><li><i class="fa fa-star"></i></li><li><i class="fa fa-star"></i></li>';
-  //Timer
-  minutes.textContent = '00';
-  seconds.textContent = '00';
-  time = 0;
-  starCount = 0;
-  clearInterval(interval);
-}
 
 //function for adding cards to open array and comparing them
 function openAdd(){
@@ -107,6 +93,7 @@ function openAdd(){
   }
 }
 
+//function for creating moves and setting stars ratings
 function movesCounter(){
   let counter = document.querySelector(".moves");
   let step = 12;
@@ -130,7 +117,7 @@ function movesCounter(){
   }
 }
 
-
+//function to start the game timer
 var time = 0;
 function startTimer() {
   time += 1;
@@ -142,6 +129,7 @@ function startTimer() {
   }
 }
 
+// function to display congratultions modal when winning conditions are met
 function winner(){
   if (matchedCard.length === 16){
     clearInterval(interval);
@@ -149,14 +137,10 @@ function winner(){
     let starsSpan = winContainer.querySelector('.stars');
     let scorePanelTime = document.querySelector('.timer');
     let timeSpan = winContainer.querySelector('.time');
-    let tempMinIndicator;
-    let count = stars.length
 
     movesSpan.textContent = moves;
     starsSpan.textContent = star;
-    timeSpan.appendChild(scorePanelTime.cloneNode(true));
-    tempMinutesIndicator = document.createElement('span');
-    timeSpan.appendChild(tempMinutesIndicator);
+    timeSpan.textContent = minutes.textContent +':'+ seconds.textContent
 
     container.classList.add('hidden');
     winContainer.classList.remove('hidden');
@@ -164,6 +148,7 @@ function winner(){
   replay();
 }
 
+//function to close congratulations modal and replay
 function replay(){
   let playAgain = document.querySelector(".playAgain");
   playAgain.addEventListener('click', function(){
@@ -173,15 +158,19 @@ function replay(){
   });
 }
 
-
-
-/*
- * set up the event listener for a card. If a card is clicked:
- *  - display the card's symbol (put this functionality in another function that you call from this one)
- *  - add the card to a *list* of "open" cards (put this functionality in another function that you call from this one)
- *  - if the list already has another card, check to see if the two cards match
- *    + if the cards do match, lock the cards in the open position (put this functionality in another function that you call from this one)
- *    + if the cards do not match, remove the cards from the list and hide the card's symbol (put this functionality in another function that you call from this one)
- *    + increment the move counter and display it on the page (put this functionality in another function that you call from this one)
- *    + if all cards have matched, display a message with the final score (put this functionality in another function that you call from this one)
- */
+//function to reset all the game parameters to default
+document.body.onload = reset(); 
+restart[0].addEventListener('click', reset);
+function reset() {
+  clearInterval(interval);
+  open = [];
+  moves = 0;
+  counter.textContent = "0";
+  document.querySelector('.stars').innerHTML = '<li><i class="fa fa-star"></i></li><li><i class="fa fa-star"></i></li><li><i class="fa fa-star"></i></li>';
+  minutes.textContent = '00';
+  seconds.textContent = '00';
+  time = 0;
+  starCount = 0;
+  matched = 8;
+  newDeck();
+}
