@@ -37,103 +37,103 @@ FROM
 WHERE 
   YEAR = 2016 
   AND country_name = 'World';
+
 -- c. What was the change (in sq km) in the forest area of the world from 1990 to 2016?
-WITH table1 AS (
-  SELECT 
-    forest_area_sqkm AS forest_area_sqkm_1990 
-  FROM 
-    forestation 
-  WHERE 
-    YEAR = 1990 
-    AND country_name = 'World'
-), 
-table2 AS (
-  SELECT 
-    forest_area_sqkm AS forest_area_sqkm_2016 
-  FROM 
-    forestation 
-  WHERE 
-    YEAR = 2016 
-    AND country_name = 'World'
-) 
 SELECT 
-  ROUND(
-    table1.forest_area_sqkm_1990 - table2.forest_area_sqkm_2016
-  ) AS forest_area_change 
+  sub1.forest_area_sqkm - sub2.forest_area_sqkm AS diff_forest_area_sq_km 
 FROM 
-  table1, 
-  table2;
+  (
+    SELECT 
+      fa.country_code AS country_code, 
+      fa.forest_area_sqkm 
+    FROM 
+      forest_area fa 
+    WHERE 
+      fa.country_name = 'World' 
+      AND fa.year = 1990
+  ) AS sub1 
+  JOIN (
+    SELECT 
+      fa.country_code AS country_code, 
+      fa.forest_area_sqkm 
+    FROM 
+      forest_area fa 
+    WHERE 
+      fa.country_name = 'World' 
+      AND fa.year = 2016
+  ) AS sub2 ON sub1.country_code = sub2.country_code;
+
 
 -- d. What was the percent change in forest area of the world between 1990 and 2016?
-WITH table1 AS (
-  SELECT 
-    forest_area_sqkm AS forest_area_sqkm_1990 
-  FROM 
-    forestation 
-  WHERE 
-    YEAR = 1990 
-    AND country_name = 'World'
-), 
-table2 AS (
-  SELECT 
-    forest_area_sqkm AS forest_area_sqkm_2016 
-  FROM 
-    forestation 
-  WHERE 
-    YEAR = 2016 
-    AND country_name = 'World'
-) 
 SELECT 
-  ROUND(
+  (
     (
-      (
-        -(
-          table1.forest_area_sqkm_1990 - table2.forest_area_sqkm_2016
-        ) / table1.forest_area_sqkm_1990
-      ) * 100
-    ):: NUMERIC, 
-    2
-  ):: VARCHAR || '%' AS forest_area_change 
+      sub1.forest_area_sqkm - sub2.forest_area_sqkm
+    )/ sub1.forest_area_sqkm
+  )* 100 AS perc_change_fa 
 FROM 
-  table1, 
-  table2;
+  (
+    SELECT 
+      fa.country_code AS country_code, 
+      fa.forest_area_sqkm 
+    FROM 
+      forest_area fa 
+    WHERE 
+      fa.country_name = 'World' 
+      AND fa.year = 1990
+  ) AS sub1 
+  JOIN (
+    SELECT 
+      fa.country_code AS country_code, 
+      fa.forest_area_sqkm 
+    FROM 
+      forest_area fa 
+    WHERE 
+      fa.country_name = 'World' 
+      AND fa.year = 2016
+  ) AS sub2 ON sub1.country_code = sub2.country_code;
+
 
 -- e. If you compare the amount of forest area lost between 1990 and 2016, to which country's total area in 2016 is it closest to?
 SELECT 
-  DISTINCT country_name, 
-  ROUND(total_area_sqkm :: NUMERIC) AS total_area_sqkm 
+  DISTINCT fo.country_name, 
+  ROUND(fo.total_area_sqkm :: NUMERIC) AS total_area_sqkm, 
+  ABS(
+    fo.total_area_sqkm - (
+      SELECT 
+        sub1.forest_area_sqkm - sub2.forest_area_sqkm AS diff_forest_area_sq_km 
+      FROM 
+        (
+          SELECT 
+            fa.country_code AS country_code, 
+            fa.forest_area_sqkm 
+          FROM 
+            forest_area fa 
+          WHERE 
+            fa.country_name = 'World' 
+            AND fa.year = 1990
+        ) AS sub1 
+        JOIN (
+          SELECT 
+            fa.country_code AS country_code, 
+            fa.forest_area_sqkm 
+          FROM 
+            forest_area fa 
+          WHERE 
+            fa.country_name = 'World' 
+            AND fa.year = 2016
+        ) AS sub2 ON sub1.country_code = sub2.country_code
+    )
+  ) AS diff_fa_la_sqkm 
 FROM 
-  forestation 
+  forestation fo 
 WHERE 
-  total_area_sqkm >= (
-    WITH table1 AS (
-      SELECT 
-        forest_area_sqkm AS forest_area_sqkm_1990 
-      FROM 
-        forestation 
-      WHERE 
-        YEAR = 1990 
-        AND country_name = 'World'
-    ), 
-    table2 AS (
-      SELECT 
-        forest_area_sqkm AS forest_area_sqkm_2016 
-      FROM 
-        forestation 
-      WHERE 
-        YEAR = 2016 
-        AND country_name = 'World'
-    ) 
-    SELECT 
-      table1.forest_area_sqkm_1990 - table2.forest_area_sqkm_2016 AS forest_area_change 
-    FROM 
-      table1, 
-      table2
-  ) 
+  fo.year = 2016 
 ORDER BY 
-  total_area_sqkm 
+  diff_fa_la_sqkm 
 LIMIT 
   1;
+
 
 -- Part 2 - Regional Outlook
 -- a. What was the percent forest of the entire world in 2016? Which region had the HIGHEST percent forest in 2016, and which had the LOWEST, to 2 decimal places?
@@ -161,7 +161,7 @@ FROM
   ) AS sub 
 ORDER BY 
   region;
-  
+
 -- b. What was the percent forest of the entire world in 1990? Which region had the HIGHEST percent forest in 1990, and which had the LOWEST, to 2 decimal places?
 SELECT 
   sub.*, 
@@ -253,95 +253,120 @@ ORDER BY
 
 -- Part 3 - Country-Level Detail
 -- a. Which 5 countries saw the largest amount decrease in forest area from 1990 to 2016? What was the difference in forest area for each?
-WITH table1 AS (
+WITH table1990 AS (
   SELECT 
-    country_code, 
-    country_name, 
-    region, 
-    forest_area_sqkm 
+    fa.country_code, 
+    fa.country_name, 
+    fa.year, 
+    fa.forest_area_sqkm 
   FROM 
-    forestation 
+    forest_area fa 
   WHERE 
-    year = 1990
+    fa.year = 1990 
+    AND fa.forest_area_sqkm IS NOT NULL 
+    AND fa.country_name != 'World'
 ), 
-table2 AS (
+table2016 AS (
   SELECT 
-    country_code, 
-    country_name, 
-    forest_area_sqkm 
+    fa.country_code, 
+    fa.country_name, 
+    fa.year, 
+    fa.forest_area_sqkm 
   FROM 
-    forestation 
+    forest_area fa 
   WHERE 
-    year = 2016
+    fa.year = 2016 
+    AND fa.forest_area_sqkm IS NOT NULL 
+    AND fa.country_name != 'World'
 ) 
 SELECT 
-  table1.country_name, 
-  table1.region, 
-  table1.forest_area_sqkm AS forest_area_1990, 
-  table2.forest_area_sqkm AS forest_area_2016, 
-  ROUND(
-    (
-      table2.forest_area_sqkm - table1.forest_area_sqkm
-    ):: NUMERIC, 
-    2
-  ) AS change 
+  table1990.country_code, 
+  table1990.country_name, 
+  re.region, 
+  table1990.forest_area_sqkm AS fa_1990_sqkm, 
+  table2016.forest_area_sqkm AS fa_2016_sqkm, 
+  table1990.forest_area_sqkm - table2016.forest_area_sqkm AS diff_fa_sqkm 
 FROM 
-  table1 
-  JOIN table2 ON table1.country_code = table2.country_code 
-WHERE 
-  table1.country_name NOT LIKE 'World' 
+  table1990 
+  JOIN table2016 ON table1990.country_code = table2016.country_code 
+  AND (
+    table1990.forest_area_sqkm IS NOT NULL 
+    AND table2016.forest_area_sqkm IS NOT NULL
+  ) 
+  JOIN regions re ON table2016.country_code = re.country_code 
 ORDER BY 
-  change 
+  6 DESC 
 LIMIT 
   5;
 
 -- b. Which 5 countries saw the largest percent decrease in forest area from 1990 to 2016? What was the percent change to 2 decimal places for each?
-WITH table1 AS (
+WITH table1990 AS (
   SELECT 
-    country_code, 
-    country_name, 
-    region, 
-    forest_area_sqkm 
+    fa.country_code, 
+    fa.country_name, 
+    fa.year, 
+    fa.forest_area_sqkm 
   FROM 
-    forestation 
+    forest_area fa 
   WHERE 
-    year = 1990
+    fa.year = 1990 
+    AND fa.forest_area_sqkm IS NOT NULL 
+    AND fa.country_name != 'World'
 ), 
-table2 AS (
+table2016 AS (
   SELECT 
-    country_code, 
-    country_name, 
-    forest_area_sqkm 
+    fa.country_code, 
+    fa.country_name, 
+    fa.year, 
+    fa.forest_area_sqkm 
   FROM 
-    forestation 
+    forest_area fa
   WHERE 
-    year = 2016
+    fa.year = 2016 
+    AND fa.forest_area_sqkm IS NOT NULL 
+    AND fa.country_name != 'World'
 ) 
 SELECT 
-  table1.country_name, 
-  table1.region, 
-  table1.forest_area_sqkm AS forest_area_1990, 
-  table2.forest_area_sqkm AS forest_area_2016, 
-  ROUND(
-    -(
-      (
-        1 -(
-          table2.forest_area_sqkm / table1.forest_area_sqkm
-        )
-      ) * 100
-    ):: NUMERIC, 
-    2
-  ) AS change_prc 
+  table1990.country_code, 
+  table1990.country_name, 
+  re.region, 
+  table1990.forest_area_sqkm AS fa_1990_sqkm, 
+  table2016.forest_area_sqkm AS fa_2016_sqkm, 
+  table1990.forest_area_sqkm - table2016.forest_area_sqkm AS diff_fa_sqkm, 
+  ABS(
+    ROUND(
+      CAST(
+        (
+          (
+            table2016.forest_area_sqkm - table1990.forest_area_sqkm
+          )/ table1990.forest_area_sqkm * 100
+        ) AS NUMERIC
+      ), 
+      2
+    )
+  ) AS perc_change 
 FROM 
-  table1 
-  JOIN table2 ON table1.country_code = table2.country_code 
-  AND table2.forest_area_sqkm < table1.forest_area_sqkm 
-WHERE 
-  table1.country_name NOT LIKE 'World' 
+  table1990 
+  JOIN table2016 ON table1990.country_code = table2016.country_code 
+  AND (
+    table1990.forest_area_sqkm IS NOT NULL 
+    AND table2016.forest_area_sqkm IS NOT NULL
+  ) 
+  JOIN regions re ON table2016.country_code = re.country_code 
 ORDER BY 
-  change_prc 
+  ROUND(
+    CAST(
+      (
+        (
+          table2016.forest_area_sqkm - table1990.forest_area_sqkm
+        )/ table1990.forest_area_sqkm * 100
+      ) AS NUMERIC
+    ), 
+    2
+  ) 
 LIMIT 
   5;
+
 
 -- c. If countries were grouped by percent forestation in quartiles, which group had the most countries in it in 2016?
 WITH sub AS (
