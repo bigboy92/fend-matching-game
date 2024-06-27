@@ -1,0 +1,203 @@
+/* CREATE A VIEW*/
+CREATE VIEW forestation AS
+SELECT fa.country_code,
+       fa.country_name,
+       fa.year,
+       fa.forest_area_sqkm,
+       la.total_area_sq_mi,
+       r.region,
+       r.income_group,
+       (fa.forest_area_sqkm / 2.59 / la.total_area_sq_mi) AS forest_percent
+FROM forest_area fa
+JOIN land_area la ON fa.country_code=la.country_code
+AND fa.year=la.year
+JOIN regions r ON la.country_code=r.country_code
+
+/* Part 1 query 1 */
+SELECT fa.year,
+       SUM(fa.forest_area_sqkm) AS total_forest_area,
+       LAG(SUM(fa.forest_area_sqkm)) OVER (
+                                           ORDER BY fa.year ) AS lag,
+       SUM(fa.forest_area_sqkm) - LAG(SUM(fa.forest_area_sqkm)) OVER (
+                                                                      ORDER BY fa.year ) AS area_difference
+FROM forestation fa
+WHERE fa.year = 1990
+  OR fa.year = 2016
+GROUP BY fa.year
+ORDER BY fa.year;
+
+/* Part 1 query 2 */
+SELECT DISTINCT fa.country_name,
+                fa.total_area_sq_mi * 2.59 AS country_area,
+                ABS(fa.total_area_sq_mi * 2.59 - 2191038) AS area_similar
+FROM forestation fa
+ORDER BY area_similar LIMIT 1;
+
+/* Part 2 query 1: Find out the percent of the total land area of the world designated as forest in 2016 and 1990 */
+SELECT fa.year,
+       SUM(fa.forest_area_sqkm) AS region_total_forest_area,
+       SUM(fa.total_area_sq_mi) AS region_total_area,
+       SUM(fa.forest_area_sqkm) / 2.59 / SUM(fa.total_area_sq_mi) AS world_forest_percent
+FROM forestation fa
+WHERE fa.year = 1990
+  OR fa.year = 2016
+GROUP BY fa.year;
+
+/* Part 2 query 2: Find out the highest and the lowest relative forestation in each region in 2016 */
+SELECT fa.year,
+       fa.region,
+       (SUM(fa.forest_area_sqkm) / 2.59 / SUM(fa.total_area_sq_mi)) AS forest_percent
+FROM forestation fa
+WHERE fa.year = 2016
+GROUP BY 1,
+         2
+ORDER BY forest_percent;
+
+/* Part 2 query 3: Find out the highest and the lowest relative forestation in each region in 1990 */
+SELECT fa.year,
+       fa.region,
+       (SUM(fa.forest_area_sqkm) / 2.59 / SUM(fa.total_area_sq_mi)) AS forest_percent
+FROM forestation fa
+WHERE fa.year = 1990
+GROUP BY 1,
+         2
+ORDER BY forest_percent;
+
+/* Part 2 query 4: Table2.1 */
+SELECT fa.year,
+       fa.region,
+       (SUM(fa.forest_area_sqkm) / 2.59 / SUM(fa.total_area_sq_mi)) AS forest_percent
+FROM forestation fa
+WHERE fa.year = 2016
+  OR fa.year = 1990
+GROUP BY 1,
+         2
+ORDER BY 2,
+         1;
+
+/* Part 3A query 1: Find two of the fastest-growing countries in terms of forest area and the value of that growth were identified */
+SELECT sub1.country_name,
+       sub1.forest_area_first,
+       sub2.forest_area_second,
+       (sub2.forest_area_second - sub1.forest_area_first) AS area_change
+FROM
+  (SELECT country_name,
+          forest_area_sqkm AS forest_area_first
+   FROM forestation fa
+   WHERE YEAR = 1990) sub1
+JOIN
+  (SELECT country_name,
+          forest_area_sqkm AS forest_area_second
+   FROM forestation fa
+   WHERE YEAR = 2016) sub2 ON sub1.country_name = sub2.country_name
+WHERE (sub2.forest_area_second - sub1.forest_area_first) IS NOT NULL
+ORDER BY area_change DESC;
+
+/* Part 3A query 2: Find the largest percent change in forest area from 1990 to 2016 */
+SELECT sub1.country_name,
+       sub1.forest_area_first,
+       sub2.forest_area_second,
+       ((sub2.forest_area_second - sub1.forest_area_first) / sub1.forest_area_first) AS area_change_percent
+FROM
+  (SELECT country_name,
+          forest_area_sqkm AS forest_area_first
+   FROM forestation fa
+   WHERE YEAR = 1990) sub1
+JOIN
+  (SELECT country_name,
+          forest_area_sqkm AS forest_area_second
+   FROM forestation fa
+   WHERE YEAR = 2016) sub2 ON sub1.country_name = sub2.country_name
+WHERE (sub2.forest_area_second - sub1.forest_area_first) IS NOT NULL
+ORDER BY area_change_percent DESC;
+
+/* Part 3B query 3: Table3.1 */
+SELECT sub1.country_name,
+       sub1.region,
+       sub1.forest_area_first,
+       sub2.forest_area_second,
+       (sub2.forest_area_second - sub1.forest_area_first) AS area_change
+FROM
+  (SELECT country_name,
+          region,
+          forest_area_sqkm AS forest_area_first
+   FROM forestation fa
+   WHERE YEAR = 1990) sub1
+JOIN
+  (SELECT country_name,
+          region,
+          forest_area_sqkm AS forest_area_second
+   FROM forestation fa
+   WHERE YEAR = 2016) sub2 ON sub1.country_name = sub2.country_name
+WHERE (sub2.forest_area_second - sub1.forest_area_first) IS NOT NULL
+  AND sub1.country_name<>'World'
+ORDER BY area_change LIMIT 5;
+
+/* Part 3B query 4: Table3.2 */
+SELECT sub1.country_name,
+       sub1.region,
+       sub1.forest_area_first,
+       sub2.forest_area_second,
+       ((sub2.forest_area_second - sub1.forest_area_first) / sub1.forest_area_first) AS area_change_percent
+FROM
+  (SELECT country_name,
+          region,
+          forest_area_sqkm AS forest_area_first
+   FROM forestation fa
+   WHERE YEAR = 1990) sub1
+JOIN
+  (SELECT country_name,
+          region,
+          forest_area_sqkm AS forest_area_second
+   FROM forestation fa
+   WHERE YEAR = 2016) sub2 ON sub1.country_name = sub2.country_name
+WHERE (sub2.forest_area_second - sub1.forest_area_first) IS NOT NULL
+ORDER BY area_change_percent LIMIT 5;
+
+/* Part 3C query 5: Table3.3 */
+SELECT sub2.percentage,
+       COUNT(sub2.percentage)
+FROM
+  (SELECT sub1.country_name,
+          (sub1.country_total_forest_area / 2.59 / sub1.country_total_area) AS forest_percent,
+          NTILE(4) OVER (
+                         ORDER BY (sub1.country_total_forest_area / 2.59 / sub1.country_total_area)) AS percentage
+   FROM
+     (SELECT fa.year,
+             fa.country_name,
+             SUM(fa.forest_area_sqkm) AS country_total_forest_area,
+             SUM(fa.total_area_sq_mi) AS country_total_area
+      FROM forestation fa
+      WHERE fa.year = 2016
+      GROUP BY 1,
+               2) sub1
+   WHERE sub1.country_name <> 'World') sub2
+WHERE sub2.forest_percent IS NOT NULL
+GROUP BY 1
+ORDER BY 1;
+
+/* Part 3C query 6: Table3.4 */
+SELECT sub2.country_name,
+       sub2.region,
+       sub2.forest_percent
+FROM
+  (SELECT sub1.country_name,
+          sub1.region,
+          (sub1.country_total_forest_area/2.59/sub1.country_total_area) AS forest_percent,
+          NTILE (4) OVER (
+                          ORDER BY (sub1.country_total_forest_area/2.59/sub1.country_total_area)) AS percentage
+   FROM
+     (SELECT fa.year,
+             fa.country_name,
+             fa.region,
+             SUM(fa.forest_area_sqkm) AS country_total_forest_area,
+             SUM(fa.total_area_sq_mi) AS country_total_area
+      FROM forestation fa
+      WHERE fa.country_name <> 'World'
+      GROUP BY 1,
+               2,
+               3) sub1
+   WHERE sub1.year=2016) sub2
+WHERE sub2.percentage=4
+  AND sub2.forest_percent IS NOT NULL
+ORDER BY 3 DESC
