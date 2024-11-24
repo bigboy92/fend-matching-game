@@ -34,29 +34,13 @@ AND   fores_1990.year = '1990' AND fores_1990.country_name = 'World';
 -- 3.3145824351614124
 
 PART1.e 
+-- flow by result of part1.c the change (in sq km) in the forest area: 1324449
+SELECT country_name, ROUND((total_area_sqkm)::NUMERIC, 2) 
+FROM forestation
+WHERE year='2016' AND total_area_sqkm < 1324449
+order by total_area_sqkm desc limit 1;
 
-WITH forest_area_change AS (
-  SELECT 
-    ( 
-      SELECT forest_area_sqkm 
-      FROM forestation 
-      WHERE year = 1990 AND country_name = 'World'
-    ) 
-    - 
-    (
-      SELECT forest_area_sqkm 
-      FROM forestation 
-      WHERE year = 2016 AND country_name = 'World'
-    ) AS change
-)
-SELECT DISTINCT 
-  country_name,
-  total_area_sqkm
-FROM forestation, forest_area_change
-WHERE total_area_sqkm >= forest_area_change.change
-ORDER BY total_area_sqkm
-LIMIT 1;
--- Mongolia	1553560.0107999998
+-- Peru	1279999.99
 
 PART2.a
 WITH region_summary AS (
