@@ -1,54 +1,55 @@
-import os
-import json
-import time
-
+import argparse
+import tensorflow as tf
 import numpy as np
-import argparse as arg
+import json
 from PIL import Image
 
-import tensorflow as tf
-import tensorflow_hub as hub
-
-
-
-def load_model(path):
-    model_path = './' + path
-    load_model = tf.keras.models.load_model(path ,custom_objects={'KerasLayer':hub.KerasLayer}, compile=False)
-    return load_model
-                                                 
 def process_image(image):
-    image_size = 224
-    image = tf.cast(image, tf.float32)
-    image = tf.image.resize(image, (image_size, image_size))
-    image /= 255
-    image = image.numpy()
-    return image    
-    
-def predict(image_path, model, top_k=5):
-    im = Image.open(image_path)
-    test_image = np.asarray(im)
-    processed_test_image = process_image(test_image)
-    processed_test_image = np.expand_dims(processed_test_image, axis=0)
-    preds = model.predict(processed_test_image)
-    probs = - np.partition(-preds[0], top_k)[:top_k]
-    classes = np.argpartition(-preds[0], top_k)[:top_k]
-    return probs, classes
+    """Preprocess the image for prediction."""
+    image = tf.image.resize(image, (224, 224)) / 255.0
+    return image.numpy()
 
-parser = arg.ArgumentParser()
+def predict(image_path, model, top_k):
+    """Predict the top K classes and probabilities for an image."""
+    image = Image.open(image_path)
+    image = np.expand_dims(process_image(np.asarray(image)), axis=0)
+    predictions = model.predict(image)
+    top_probs = np.sort(predictions[0])[-top_k:][::-1]
+    top_classes = np.argsort(predictions[0])[-top_k:][::-1]
+    return top_probs, top_classes
 
-parser.add_argument('img_path', type=str)
-parser.add_argument('model_path', type=str)
-parser.add_argument('--top_k', type=int, default=5)
-parser.add_argument('--category_names', type=str, required=True)
+def load_class_names(category_names):
+    """Load the category names from a JSON file."""
+    with open(category_names, 'r') as f:
+        class_names = json.load(f)
+    return class_names
 
-args = parser.parse_args()
-model = load_model(args.model_path)
+def main():
+    parser = argparse.ArgumentParser(description="Flower Classification Prediction")
+    parser.add_argument('image_path', type=str, help="Path to the image")
+    parser.add_argument('model_path', type=str, help="Path to the saved model")
+    parser.add_argument('--top_k', type=int, default=5, help="Return top K most likely classes")
+    parser.add_argument('--category_names', type=str, default=None, help="Path to category names JSON file")
 
-prob, classes = predict(image_path=args.img_path, model=model, top_k=args.top_k)
+    args = parser.parse_args()
 
-with open(args.category_names, 'r') as f:
-    class_names = json.load(f)
-    classes = {int(i): class_names[str(i)] for i in classes}
-    
-print('Predictions:', classes)
-print('Probability:', prob)
+    # Load the model
+    model = tf.keras.models.load_model(args.model_path, 
+                                       custom_objects={'KerasLayer': tf.keras.applications.MobileNetV2})
+
+    # Predict
+    probs, classes = predict(args.image_path, model, args.top_k)
+
+    # Map classes to names if category names file is provided
+    if args.category_names:
+        class_names = load_class_names(args.category_names)
+        class_labels = [class_names[str(cls)] for cls in classes]
+    else:
+        class_labels = classes
+
+    # Print results
+    for i in range(len(probs)):
+        print(f"{class_labels[i]}: {probs[i]:.4f}")
+
+if __name__ == "__main__":
+    main()
